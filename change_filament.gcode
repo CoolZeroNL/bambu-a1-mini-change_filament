@@ -25,7 +25,6 @@ M1007 S0
 M204 S9000
 
 {if toolchange_count > 1}
-
     ; set CNC workspace plane
     G17
 
@@ -44,45 +43,32 @@ M204 S9000
     {if old_filament_temp > 142 && next_extruder < 255}
         M104 S[old_filament_temp]
     {endif}
-
-    ; move in front of cutter
-    G1 X180 F18000
-
-    ; slowly cut
-    G1 X195 F300
     
+    ; we need more power for X stepper, else it wont cut, and skips steps
+    M17 X1.2
+    
+    ; move before cutter
+    G1 X185 F10000
+    
+    ; slowly cut
+    G1 X197 F100
+    G1 X199 F800
+
     ; slowly move back from cut
-    G1 X180 F300
-
+    G1 X190 F1000
+    
     ; move to poop chute and bed to front
-    G1 X0 Y185 F18000
+    G1 X0 F10000
     G1 X-13.5 F9000 ; chute move
-
-    ; play sound
-    ; M17                                                 ; Enable Steppers
-    ; M400 S1
-    ; M1006 S1
-    ; M1006 A0 B0 L100 C37 D10 M100 E37 F10 N100
-    ; M1006 A0 B0 L100 C41 D10 M100 E41 F10 N100
-    ; M1006 A0 B0 L100 C44 D10 M100 E44 F10 N100
-    ; M1006 A0 B10 L100 C0 D10 M100 E0 F10 N100
-    ; M1006 A43 B10 L100 C39 D10 M100 E46 F10 N100
-    ; M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
-    ; M1006 A0 B0 L100 C39 D10 M100 E43 F10 N100
-    ; M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
-    ; M1006 A0 B0 L100 C41 D10 M100 E41 F10 N100
-    ; M1006 A0 B0 L100 C44 D10 M100 E44 F10 N100
-    ; M1006 A0 B0 L100 C49 D10 M100 E49 F10 N100
-    ; M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
-    ; M1006 A44 B10 L100 C39 D10 M100 E48 F10 N100
-    ; M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
-    ; M1006 A0 B0 L100 C39 D10 M100 E44 F10 N100
-    ; M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
-    ; M1006 A43 B10 L100 C39 D10 M100 E46 F10 N100
-    ; M1006 W
-
+    
+    ; reset back to default power for X stepper
+    M17 X0.7
+    
     ; unload, extruder retract
-    G1 E-20 F900
+    G1 E-25 F900
+    
+    ; wait untill finish
+    M400
 
     ; AMS stuff
     ; M620.1 E F[old_filament_e_feedrate] T{nozzle_temperature_range_high[previous_extruder]}
@@ -91,33 +77,38 @@ M204 S9000
     ; M620.1 E F[new_filament_e_feedrate] T{nozzle_temperature_range_high[next_extruder]}
     ; M620.10 A1 F[new_filament_e_feedrate] L[flush_length] H[nozzle_diameter] T[nozzle_temperature_range_high]
 
+    ; play sound
+    M17                                                 ; Enable Steppers
+    M400 S1                                             ; wait 1 sec
+    M1006 S1
+    M1006 A0 B0 L100 C37 D10 M100 E37 F10 N100
+    M1006 A0 B0 L100 C41 D10 M100 E41 F10 N100
+    M1006 A0 B0 L100 C44 D10 M100 E44 F10 N100
+    M1006 A0 B10 L100 C0 D10 M100 E0 F10 N100
+    M1006 A43 B10 L100 C39 D10 M100 E46 F10 N100
+    M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
+    M1006 A0 B0 L100 C39 D10 M100 E43 F10 N100
+    M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
+    M1006 A0 B0 L100 C41 D10 M100 E41 F10 N100
+    M1006 A0 B0 L100 C44 D10 M100 E44 F10 N100
+    M1006 A0 B0 L100 C49 D10 M100 E49 F10 N100
+    M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
+    M1006 A44 B10 L100 C39 D10 M100 E48 F10 N100
+    M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
+    M1006 A0 B0 L100 C39 D10 M100 E44 F10 N100
+    M1006 A0 B0 L100 C0 D10 M100 E0 F10 N100
+    M1006 A43 B10 L100 C39 D10 M100 E46 F10 N100
+    M1006 W
+    
     ; pause for user to load and press resume    
     M400 U1
-    ; note: pause will move the nozzle to the poop chute, if its not place there
-    ; note: resume, will do a purge, and a wipe
+    ; pause will move the nozzle to the poop chute, if its not place there
+    ; resume, will do a purge, and a wipe...
 
-    ; we manual now change the filament, and press load
+    ; ---> we manual now change the filament, and press load
 
     ; prevent oozing when moving, extruder retract
-    G1 E-1 F900
-
-    ; > do we want to clean the nozzle ?
-    ; G90                  ; Absolute positioning
-    ; G1 Z5 F300           ; 30000
-    ; G1 X25 Y175 F300.1   ; 30000.1 Brush material
-    ; G1 Z0.2 F300.1       ; 30000.1
-    ; G1 Y185
-    ; G91                  ; incremental positioning
-    ; G1 X-30 F300         ; 30000
-    ; G1 Y-2
-    ; G1 X27
-    ; G1 Y1.5
-    ; G1 X-28
-    ; G1 Y-2
-    ; G1 X30
-    ; G1 Y1.5
-    ; G1 X-30
-    ; G90                  ; Absolute positioning
+    G1 E-2 F900
 
 {endif}
 
@@ -130,8 +121,5 @@ M620 S[next_extruder]A
 T[next_extruder]
 M621 S[next_extruder]A
 
-; turn off clog detect
+;
 G392 S1
-
-; turn on mass estimation
-M1007 S1
